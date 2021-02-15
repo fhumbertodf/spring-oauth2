@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.mybookstore.domain.User;
+import br.com.mybookstore.security.ResourceOwner;
 import br.com.mybookstore.service.UsuarioService;
 import br.com.mybookstore.web.dto.DadosDeRegistro;
 
@@ -28,11 +29,11 @@ public class UsuariosController {
 
 	@Autowired
 	AuthenticationManagerBuilder authenticationManagerBuilder;
-	
+
 	@Autowired
 	PasswordEncoder passwordEncoder;
-	
-   /**
+
+	/**
 	 * Método que recebe os dados do formulário de cadastro de usuário
 	 * 
 	 * @param dadosDeRegistro
@@ -42,7 +43,7 @@ public class UsuariosController {
 	public ResponseEntity<?> registrar(@Valid DadosDeRegistro dadosDeRegistro, BindingResult bindingResult) {
 
 		if (bindingResult.hasErrors()) {
-			return new ResponseEntity<String>("usuarios/cadastro", HttpStatus.OK);			
+			return new ResponseEntity<String>("usuarios/cadastro", HttpStatus.OK);
 		}
 
 		// cria um usuario no sistema
@@ -55,8 +56,8 @@ public class UsuariosController {
 		usuarioService.registrar(usuario);
 
 		// autentica o usuário recem-registrado para que o mesmo nao precise fazer o
-		// login		
-		mantemUsuarioAutenticado(dadosDeRegistro.getLogin(), dadosDeRegistro.getSenha());
+		// login
+		mantemUsuarioAutenticado(usuario, dadosDeRegistro.getSenha());
 
 		// usuário cadastrado é redirecionado para página de controle de livros
 		return new ResponseEntity<String>("redirect:/livros/principal", HttpStatus.OK);
@@ -70,8 +71,9 @@ public class UsuariosController {
 	 * @param authenticationManager
 	 * @param usuario
 	 */
-	private void mantemUsuarioAutenticado(String login, String password) {
-		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(login, password);
+	private void mantemUsuarioAutenticado(User usuario, String password) {
+		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+				new ResourceOwner(usuario), password);
 		Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 	}
